@@ -1,0 +1,79 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font: 13px Helvetica, Arial; }
+      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      #messages { list-style-type: none; margin: 0; padding: 0; }
+      #messages li { padding: 5px 10px; }
+      #messages li:nth-child(odd) { background: #eee; }
+    </style>
+  </head>
+  <body>
+    <ul id="messages"></ul>
+    <form action="">
+      <input id="m" autocomplete="off" /><button>Send</button>
+    </form>
+  </body>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+  <script src="https://files.worldwind.arc.nasa.gov/artifactory/web/0.9.0/worldwind.min.js"
+        type="text/javascript">
+</script>
+<canvas id="canvasOne" width="1024" height="768">
+  Your browser does not support HTML5 Canvas.
+</canvas>
+  <script>
+
+    // Create a WorldWindow for the canvas.
+  var wwd = new WorldWind.WorldWindow("canvasOne");
+  
+  // Add some image layers to the WorldWindow's globe.
+  wwd.addLayer(new WorldWind.BMNGOneImageLayer());
+  wwd.addLayer(new WorldWind.BMNGLandsatLayer());
+  
+  // Add a compass, a coordinates display and some view controls to the WorldWindow.
+  wwd.addLayer(new WorldWind.CompassLayer());
+  wwd.addLayer(new WorldWind.CoordinatesDisplayLayer(wwd));
+  wwd.addLayer(new WorldWind.ViewControlsLayer(wwd));
+
+  // Create renderable layer to hold the Collada model.
+  var modelLayer = new WorldWind.RenderableLayer("Duck");
+  wwd.addLayer(modelLayer);
+
+  ducky = {'obj': null};
+
+  // Create a Collada loader and direct it to the desired directory and .dae file.
+  var position = new WorldWind.Position(45, -100, 1000e3);
+  var colladaLoader = new WorldWind.ColladaLoader(position);
+  colladaLoader.init({'dirPath': 'public/'});
+  colladaLoader.load('duck.dae', function (scene) {
+    scene.scale = 5000;
+    modelLayer.addRenderable(scene); // Add the Collada model to the renderable layer within a callback.
+    ducky['obj'] = scene;
+  });
+
+  $(function () {
+      var socket = io();
+      $('form').submit(function(e) {
+        e.preventDefault(); // prevents page reloading
+        socket.emit('msg', $('#m').val());
+        $('#m').val('');
+        return false;
+      });
+      socket.on('msg', function(msg) {
+        //$('#messages').append($('<li>').text(msg));
+        // Define a position for locating the model.
+        var position = new WorldWind.Position(parseFloat(msg), -100, 1000e3);
+        ducky['obj'].position = position;
+        wwd.redraw()
+      });
+    });
+  
+  
+  </script>
+</html>
