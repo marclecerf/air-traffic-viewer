@@ -52,7 +52,7 @@
   var colladaLoader = new WorldWind.ColladaLoader(position);
   colladaLoader.init({'dirPath': 'public/'});
   colladaLoader.load('duck.dae', function (scene) {
-    scene.scale = 5000;
+    scene.scale = 20;
     modelLayer.addRenderable(scene); // Add the Collada model to the renderable layer within a callback.
     ducky['obj'] = scene;
   });
@@ -68,7 +68,14 @@
       socket.on('msg', function(msg) {
         //$('#messages').append($('<li>').text(msg));
         // Define a position for locating the model.
-        var position = new WorldWind.Position(parseFloat(msg), -100, 1000e3);
+        arr = msg.split(" ");
+        lat_deg = parseFloat(arr[0]);
+        lon_deg = parseFloat(arr[1]);
+        alt_m = parseFloat(arr[2]);
+        console.log(lat_deg);
+        console.log(lon_deg);
+        console.log(alt_m);
+        var position = new WorldWind.Position(lat_deg, lon_deg, alt_m);
         ducky['obj'].position = position;
         wwd.redraw()
       });
