@@ -9,9 +9,9 @@ Air Traffic Viewer browser application, powered by:
 # Dependencies
 
 1. Backend
-  * [node.js](https://nodejs.org/en/)
+    - [node.js](https://nodejs.org/en/)
 1. Frontend
-  * A browser that supports HTML5
+    - A browser that supports HTML5
 
 # Quick Start
 
