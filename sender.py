@@ -39,6 +39,8 @@ class Aircraft(object):
         lat_deg, lon_deg = latlon(lat0, lon0, d_nmi, hdg)
         alt_m = (alt0 + vclmb * (dt / 3600.))
         return lat_deg, lon_deg, alt_m
+    def callsign(self):
+        return self._state.callsign
 
 if __name__ == "__main__":
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -55,7 +57,8 @@ if __name__ == "__main__":
             msg = {'scale': scale,
                    'lat_deg': lat_deg,
                    'lon_deg': lon_deg,
-                   'alt_m': alt_m}
+                   'alt_m': alt_m,
+                   'callsign': a.callsign()}
             sock.sendall(json.dumps(msg))
             time.sleep(0.05)
     finally:

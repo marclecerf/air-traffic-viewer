@@ -62,6 +62,7 @@ requirejs([], function () {
                                              data["alt_m"]);
             duckyModel['colladaScene'].position = pos;
             duckyModel['annotation'].position = pos;
+            duckyModel['annotation'].label = data["callsign"];
             wwd.redraw()
         });
     });
