@@ -43,14 +43,19 @@ if __name__ == "__main__":
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     addr = ('localhost', 13337)
     sock.connect(addr)
+    t0 = time.time()
     try:
-        a = Aircraft()
+        #a = Aircraft()
         while True:
-            lat_deg, lon_deg, alt_m = a.position()
-            msg = '{} {} {}'.format(lat_deg, lon_deg, alt_m)
+            dt = time.time() - t0
+            omega = 2.0 * math.pi
+            scale = 5000.0 * (0.5 + 0.5 * math.cos(omega * dt)) + 1.0
+            #lat_deg, lon_deg, alt_m = a.position()
+            #msg = 'position {} {} {}'.format(lat_deg, lon_deg, alt_m)
+            msg = 'scale {}'.format(scale)
             sock.sendall(msg)
             print('sent: %s' % msg)
-            time.sleep(0.1)
+            time.sleep(0.05)
     finally:
         sock.close()
 

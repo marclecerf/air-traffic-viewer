@@ -9,6 +9,8 @@ app.get('/', function(req, res) {
     res.sendFile(__dirname + '/index.html');
 });
 app.use('/public', express.static('public'));
+app.use('/public', express.static('../WebWorldWind'));
+
 
 io.on('connection', function(socket){
     console.log('a user connected');
