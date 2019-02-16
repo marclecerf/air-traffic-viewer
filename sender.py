@@ -45,16 +45,16 @@ if __name__ == "__main__":
     sock.connect(addr)
     t0 = time.time()
     try:
-        #a = Aircraft()
+        a = Aircraft()
         while True:
             dt = time.time() - t0
             omega = 2.0 * math.pi
-            scale = 5000.0 * (0.5 + 0.5 * math.cos(omega * dt)) + 1.0
-            #lat_deg, lon_deg, alt_m = a.position()
-            #msg = 'position {} {} {}'.format(lat_deg, lon_deg, alt_m)
+            scale = 200.0 * (0.5 + 0.5 * math.cos(omega * dt)) + 1.0
             msg = 'scale {}'.format(scale)
             sock.sendall(msg)
-            print('sent: %s' % msg)
+            lat_deg, lon_deg, alt_m = a.position()
+            msg = 'position {} {} {}'.format(lat_deg, lon_deg, alt_m)
+            sock.sendall(msg)
             time.sleep(0.05)
     finally:
         sock.close()

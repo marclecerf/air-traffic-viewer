@@ -22,12 +22,13 @@ requirejs([], function () {
     // Initialize the ducky vizrep.
     var duckyModel = {'colladaScene': null, 'annotation': null};
     var duckyLayer = new WorldWind.RenderableLayer("ducky");
-    var duckyPosition = new WorldWind.Position(45, -100, 1000e3);
+    var duckyPosition = new WorldWind.Position(45, -100, 3500);
     var duckyColladaLoader = new WorldWind.ColladaLoader(duckyPosition);
     duckyColladaLoader.init({'dirPath': 'public/'});
     duckyColladaLoader.load('duck.dae', function (scene) {
         duckyModel['colladaScene'] = scene;
-        duckyModel['colladaScene'].scale = 2000;
+        var scale = 200;
+        duckyModel['colladaScene'].scale = scale;
         var attrs = new WorldWind.AnnotationAttributes(null);
         attrs.cornerRadius = 14;
         attrs.backgroundColor = WorldWind.Color.BLACK;
@@ -40,11 +41,13 @@ requirejs([], function () {
         attrs.height = 100;
         attrs.textAttributes.color = WorldWind.Color.WHITE;
         attrs.insets = new WorldWind.Insets(10, 10, 10, 10);
-        duckyAnnotation.label = "Lorem Ipsum.";
         duckyModel['annotation'] = new WorldWind.Annotation(duckyPosition,
                                                             attrs);
-        duckyLayer.addRenderable(duckyModel['colladaScene']);
+        
+        duckyModel['annotation'].label = "Lorem Ipsum.";
         duckyLayer.addRenderable(duckyModel['annotation']);
+        duckyLayer.addRenderable(duckyModel['colladaScene']);
+        console.log(duckyModel['annotation'])
         wwd.addLayer(duckyLayer);
     });
 
@@ -58,19 +61,20 @@ requirejs([], function () {
         return false;
         });
         socket.on('msg', function(msg) {
-            console.log(msg);
-            arr = msg.split(" ");
-            msgtype = arr[0];
+            var arr = msg.split(" ");
+            var msgtype = arr[0];
             if (msgtype == 'scale') {
-                scale = parseFloat(arr[1]);
+                var scale = parseFloat(arr[1]);
+                //console.debug('SCALE MSG: ' + scale);
                 duckyModel['colladaScene'].scale = scale;
             } else if (msgtype == 'position') {
-                lat_deg = parseFloat(arr[0]);
-                lon_deg = parseFloat(arr[1]);
-                alt_m = parseFloat(arr[2]);
-                pos = new WorldWind.Position(lat_deg, lon_deg, alt_m);
+                var lat_deg = parseFloat(arr[1]);
+                var lon_deg = parseFloat(arr[2]);
+                var alt_m = parseFloat(arr[3]);
+                var pos = new WorldWind.Position(lat_deg, lon_deg, alt_m);
+                //console.debug('POSITION MSG: ' + lat_deg + "," + lon_deg + "," + alt_m);
                 duckyModel['colladaScene'].position = pos
-                duckyModel['annotation'].attributes.position = pos
+                duckyModel['annotation'].position = pos
             }
             wwd.redraw()
         });
