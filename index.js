@@ -4,37 +4,29 @@ var http = require('http').Server(app);
 var net = require('net');
 var io = require('socket.io')(http);
 
-
 app.get('/', function(req, res) {
+    console.log('Serving Frontend to client on port 3000')
     res.sendFile(__dirname + '/index.html');
 });
 app.use('/public', express.static('public'));
-app.use('/public', express.static('../WebWorldWind'));
-
 
 io.on('connection', function(socket){
-    console.log('a user connected');
-    socket.on('msg', function(msg){
-        console.log('msg: ' + msg);
-        io.emit('msg', msg);
-    });
+    console.log('Frontend connected to socket.io');
     socket.on('disconnect', function(){
-        console.log('user disconnected');
+        console.log('Frontend disconnected');
     });
 });
 
 http.listen(3000, function(){
-    console.log('listening on *:3000');
+    console.log('Listening on *:3000');
 });
 
 const server = net.createServer((c) => {
-    // 'connection' listener
-    console.log('client connected');
+    console.log('Client connected to port 13337');
     c.on('end', () => {
-        console.log('client disconnected');
+        console.log('Client disconnected');
     });
     c.on('data', (msg) => {
-        //console.log('got msg: ' + msg);
         io.emit('msg', msg.toString());
     })
 });
@@ -44,5 +36,5 @@ server.on('error', (err) => {
 });
 
 server.listen(13337, () => {
-    console.log('server bound');
+    console.log('Listening on *:13337');
 });
