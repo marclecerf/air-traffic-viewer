@@ -54,28 +54,14 @@ requirejs([], function () {
     // Callbacks to handle socket.io messages from backend
     $(function () {
         var socket = io();
-        $('form').submit(function(e) {
-        e.preventDefault(); // prevents page reloading
-        socket.emit('msg', $('#m').val());
-        $('#m').val('');
-        return false;
-        });
         socket.on('msg', function(msg) {
-            var arr = msg.split(" ");
-            var msgtype = arr[0];
-            if (msgtype == 'scale') {
-                var scale = parseFloat(arr[1]);
-                //console.debug('SCALE MSG: ' + scale);
-                duckyModel['colladaScene'].scale = scale;
-            } else if (msgtype == 'position') {
-                var lat_deg = parseFloat(arr[1]);
-                var lon_deg = parseFloat(arr[2]);
-                var alt_m = parseFloat(arr[3]);
-                var pos = new WorldWind.Position(lat_deg, lon_deg, alt_m);
-                //console.debug('POSITION MSG: ' + lat_deg + "," + lon_deg + "," + alt_m);
-                duckyModel['colladaScene'].position = pos
-                duckyModel['annotation'].position = pos
-            }
+            var data = JSON.parse(msg);
+            duckyModel['colladaScene'].scale = data["scale"];
+            var pos = new WorldWind.Position(data["lat_deg"],
+                                             data["lon_deg"],
+                                             data["alt_m"]);
+            duckyModel['colladaScene'].position = pos;
+            duckyModel['annotation'].position = pos;
             wwd.redraw()
         });
     });

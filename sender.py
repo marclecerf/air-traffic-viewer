@@ -2,6 +2,7 @@ from opensky_api import OpenSkyApi
 import socket
 import time
 import math
+import json
 
 def latlon(lat_deg, lon_deg, d_nmi, brg_deg):
     R_km = 6378.1 # Radius of the Earth
@@ -47,14 +48,15 @@ if __name__ == "__main__":
     try:
         a = Aircraft()
         while True:
+            lat_deg, lon_deg, alt_m = a.position()
             dt = time.time() - t0
             omega = 2.0 * math.pi
             scale = 200.0 * (0.5 + 0.5 * math.cos(omega * dt)) + 1.0
-            msg = 'scale {}'.format(scale)
-            sock.sendall(msg)
-            lat_deg, lon_deg, alt_m = a.position()
-            msg = 'position {} {} {}'.format(lat_deg, lon_deg, alt_m)
-            sock.sendall(msg)
+            msg = {'scale': scale,
+                   'lat_deg': lat_deg,
+                   'lon_deg': lon_deg,
+                   'alt_m': alt_m}
+            sock.sendall(json.dumps(msg))
             time.sleep(0.05)
     finally:
         sock.close()
