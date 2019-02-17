@@ -40,6 +40,7 @@ requirejs([], function () {
         attrs.width = 200;
         attrs.height = 100;
         attrs.textAttributes.color = WorldWind.Color.WHITE;
+        attrs.textAttributes.font.family = 'courier';
         attrs.insets = new WorldWind.Insets(90, 10, 10, 54);
         duckyModel['annotation'] = new WorldWind.Annotation(duckyPosition,
                                                             attrs);
@@ -63,10 +64,10 @@ requirejs([], function () {
             duckyModel['colladaScene'].position = pos;
             duckyModel['annotation'].position = pos;
             duckyModel['annotation'].label =
-                "callsign:  " + data["callsign"] + "\n" +
-                "latitude:  " + data["lat_deg"].toFixed(6) + "\n" +
-                "longitude: " + data["lon_deg"].toFixed(6) + "\n" +
-                "altitude:  " + data["alt_m"].toFixed(2) + "\n"
+                "cs   :    " + data["callsign"] + "\n" +
+                "lat  : " + data["lat_deg"].toFixed(6) + "\n" +
+                "lon  : " + data["lon_deg"].toFixed(6) + "\n" +
+                "alt  :   " + data["alt_m"].toFixed(2) + "\n"
             wwd.redraw()
         });
     });
