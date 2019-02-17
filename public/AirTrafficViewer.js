@@ -30,17 +30,17 @@ requirejs([], function () {
         var scale = 200;
         duckyModel['colladaScene'].scale = scale;
         var attrs = new WorldWind.AnnotationAttributes(null);
-        attrs.cornerRadius = 14;
+        attrs.cornerRadius = 5;
         attrs.backgroundColor = WorldWind.Color.BLACK;
         attrs.drawLeader = true;
-        attrs.leaderGapWidth = 40;
-        attrs.leaderGapHeight = 30;
+        attrs.leaderGapWidth = 10;
+        attrs.leaderGapHeight = 100;
         attrs.opacity = 1;
         attrs.scale = 1;
         attrs.width = 200;
         attrs.height = 100;
         attrs.textAttributes.color = WorldWind.Color.WHITE;
-        attrs.insets = new WorldWind.Insets(10, 10, 10, 10);
+        attrs.insets = new WorldWind.Insets(90, 10, 10, 54);
         duckyModel['annotation'] = new WorldWind.Annotation(duckyPosition,
                                                             attrs);
         
@@ -62,7 +62,11 @@ requirejs([], function () {
                                              data["alt_m"]);
             duckyModel['colladaScene'].position = pos;
             duckyModel['annotation'].position = pos;
-            duckyModel['annotation'].label = data["callsign"];
+            duckyModel['annotation'].label =
+                "callsign:  " + data["callsign"] + "\n" +
+                "latitude:  " + data["lat_deg"].toFixed(6) + "\n" +
+                "longitude: " + data["lon_deg"].toFixed(6) + "\n" +
+                "altitude:  " + data["alt_m"].toFixed(2) + "\n"
             wwd.redraw()
         });
     });
