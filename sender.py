@@ -29,17 +29,30 @@ class Aircraft(object):
         self._poll_thread.daemon = True  # will abruptly die on main exit
         self._poll_thread.start()
 
+    def _is_valid(self, s):
+        return s.geo_altitude is not None and \
+                s.latitude is not None and \
+                s.longitude is not None and \
+                s.callsign is not None
+
     def _poll_opensky(self):
         while True:
             state = None
             if self._poll_icao24 is None:
                 t0 = time.time()
-                s = self._api.get_states()
-                self._poll_last_t = time.time()
+                first_state = None
+                while first_state is None:
+                    s = self._api.get_states()
+                    self._poll_last_t = time.time()
+                    if s is not None:
+                        for st in s.states:
+                            if self._is_valid(st):
+                                first_state = st
+                                break
                 dt = self._poll_last_t - t0
                 print('Initial update from OpenSky after %3.1fs' % dt)
-                self._poll_icao24 = s.states[0].icao24
-                state = s.states[0]
+                self._poll_icao24 = first_state.icao24
+                state = first_state
             else:
                 s = self._api.get_states(icao24=self._state.icao24)
                 if s is not None:
