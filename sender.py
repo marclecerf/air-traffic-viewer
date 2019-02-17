@@ -18,54 +18,44 @@ def latlon(lat_deg, lon_deg, d_nmi, brg_deg):
                              math.cos(d_km / R_km) - math.sin(lat1) * math.sin(lat2))
     return math.degrees(lat2), math.degrees(lon2)
 
+def valid_state(s):
+    return s.geo_altitude is not None and \
+            s.latitude is not None and \
+            s.longitude is not None and \
+            s.callsign is not None
+
+def active_icao_list():
+    api = OpenSkyApi()
+    s = api.get_states()
+    lst = [st.icao24 for st in s.states if valid_state(st)]
+    return lst[:10]
+
 class Aircraft(object):
-    def __init__(self):
+    def __init__(self, icao24):
         self._api = OpenSkyApi()
+        self._icao24 = icao24
         self._state = None
         self._q = Queue.Queue(maxsize=2)
-        self._poll_icao24 = None
-        self._poll_last_t = None
+        self._poll_last_t = time.time()
         self._poll_thread = threading.Thread(target=self._poll_opensky)
         self._poll_thread.daemon = True  # will abruptly die on main exit
         self._poll_thread.start()
 
-    def _is_valid(self, s):
-        return s.geo_altitude is not None and \
-                s.latitude is not None and \
-                s.longitude is not None and \
-                s.callsign is not None
-
     def _poll_opensky(self):
         while True:
             state = None
-            if self._poll_icao24 is None:
-                t0 = time.time()
-                first_state = None
-                while first_state is None:
-                    s = self._api.get_states()
-                    self._poll_last_t = time.time()
-                    if s is not None:
-                        for st in s.states:
-                            if self._is_valid(st):
-                                first_state = st
-                                break
-                dt = self._poll_last_t - t0
-                print('Initial update from OpenSky after %3.1fs' % dt)
-                self._poll_icao24 = first_state.icao24
-                state = first_state
-            else:
-                s = self._api.get_states(icao24=self._state.icao24)
-                if s is not None:
-                    t = time.time()
-                    dt = t - self._poll_last_t
-                    print('Update from OpenSky after %3.1fs' % dt)
-                    self._poll_last_t = t
-                    state = s.states[0]
+            s = self._api.get_states(icao24=self._icao24)
+            if s is not None:
+                t = time.time()
+                dt = t - self._poll_last_t
+                print('Update from OpenSky after %3.1fs' % dt)
+                self._poll_last_t = t
+                state = s.states[0]
             if state is not None:
                 self._q.put(state)
             time.sleep(1.0)
-
-    def position(self):
+    
+    def state(self):
         while self._state is None:
             self._state = self._q.get()
         try:
@@ -84,10 +74,10 @@ class Aircraft(object):
         d_nmi = vhorz * dt / 1852.0
         lat_deg, lon_deg = latlon(lat0, lon0, d_nmi, hdg)
         alt_m = (alt0 + vclmb * (dt / 3600.))
-        return lat_deg, lon_deg, alt_m
-
-    def callsign(self):
-        return self._state.callsign
+        return {'callsign': self._state.callsign,
+                'lat_deg': lat_deg,
+                'lon_deg': lon_deg,
+                'alt_m': alt_m}
 
 if __name__ == "__main__":
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -95,18 +85,19 @@ if __name__ == "__main__":
     sock.connect(addr)
     t0 = time.time()
     try:
-        a = Aircraft()
+        icao_list = active_icao_list()
+        ac_list = [Aircraft(icao24) for icao24 in icao_list]
         while True:
-            lat_deg, lon_deg, alt_m = a.position()
-            dt = time.time() - t0
-            omega = 2.0 * math.pi
-            scale = 200.0 * (0.5 + 0.5 * math.cos(omega * dt)) + 1.0
-            msg = {'scale': scale,
-                   'lat_deg': lat_deg,
-                   'lon_deg': lon_deg,
-                   'alt_m': alt_m,
-                   'callsign': a.callsign()}
-            sock.sendall(json.dumps(msg))
+            all_msgs = []
+            for ac in ac_list:
+                msg = ac.state()
+                dt = time.time() - t0
+                omega = 2.0 * math.pi
+                scale = 200.0 * (0.5 + 0.5 * math.cos(omega * dt)) + 1.0
+                msg['scale'] = scale
+                all_msgs.append(msg)
+            payload = {'msgs': all_msgs}
+            sock.sendall(json.dumps(payload))
             time.sleep(0.05)
     finally:
         sock.close()

@@ -21,12 +21,13 @@ requirejs([], function () {
 
     // Constructor for an Aircraft.
     function Aircraft(callsign, position, scale, layer) {
-        self.callsign = callsign
-        self.colladaScene = null;
-        self.annotation = null;
-        self.colladaLoader = new WorldWind.ColladaLoader(position);
-        self.colladaLoader.init({'dirPath': 'public/'});
-        self.colladaLoader.load('duck.dae', function (scene) {
+        this.callsign = callsign
+        this.colladaScene = null;
+        this.annotation = null;
+        this.colladaLoader = new WorldWind.ColladaLoader(position);
+        this.colladaLoader.init({'dirPath': 'public/'});
+        var self = this;
+        this.colladaLoader.load('duck.dae', function (scene) {
             self.colladaScene = scene;
             self.colladaScene.scale = scale;
             var attrs = new WorldWind.AnnotationAttributes(null);
@@ -45,6 +46,8 @@ requirejs([], function () {
             self.annotation = new WorldWind.Annotation(
                 self.colladaScene.position, attrs);
             self.annotation.label = "Lorem Ipsum.";
+            self.position = position;
+            self.scale = scale;
             layer.addRenderable(self.annotation);
             layer.addRenderable(self.colladaScene);
         });
@@ -52,48 +55,59 @@ requirejs([], function () {
 
     Aircraft.prototype = {
         set position(pos) {
-            if (self.colladaScene == null) return;
-            self.colladaScene.position = pos;
-            self.annotation.position = pos;
-            self.annotation.label =
-                "cs   :    " + self.callsign + "\n" +
-                "lat  : " + self.colladaScene.position.latitude.toFixed(6) + "\n" +
-                "lon  : " + self.colladaScene.position.longitude.toFixed(6) + "\n" +
-                "alt  :   " + self.colladaScene.position.altitude.toFixed(2) + "\n"
+            if (this.colladaScene == null) return;
+            this.colladaScene.position = pos;
+            this.annotation.position = pos;
+            this.annotation.label =
+                "cs   :    " + this.callsign + "\n" +
+                "lat  : " + this.colladaScene.position.latitude.toFixed(6) + "\n" +
+                "lon  : " + this.colladaScene.position.longitude.toFixed(6) + "\n" +
+                "alt  :   " + this.colladaScene.position.altitude.toFixed(2) + "\n"
         },
 
         get position() {
-            if (self.colladaScene == null) return null;
-            else return self.colladaScene.position;
+            if (this.colladaScene == null) return null;
+            else return this.colladaScene.position;
         },
 
         set scale(scale) {
-            if (self.colladaScene == null) return;
-            self.colladaScene.scale = scale;
+            if (this.colladaScene == null) return;
+            this.colladaScene.scale = scale;
+        },
+
+        get scale() {
+            if (this.colladaScene == null) return null;
+            else return this.colladaScene.scale;
         }
-    }
+    };
 
     var acLayer = new WorldWind.RenderableLayer("aircraft");
     wwd.addLayer(acLayer);
 
     var aircraftList = {};
+
     // Callbacks to handle socket.io messages from backend
     $(function () {
         var socket = io();
         socket.on('msg', function(msg) {
-            var data = JSON.parse(msg);
-            var cs = data["callsign"];
-            var pos = new WorldWind.Position(data["lat_deg"],
-                                             data["lon_deg"],
-                                             data["alt_m"]);
-            var scale = data["scale"];
-            if (!(cs in aircraftList)) {
-                aircraftList[cs] = new Aircraft(cs, pos, scale, acLayer);
-            } else {
-                aircraftList[cs].position = pos;
-                aircraftList[cs].scale = scale;
+            var payload = JSON.parse(msg);
+            //console.log(payload);
+            for (var ii = 0; ii < payload['msgs'].length; ii += 1) {
+                var data = payload['msgs'][ii];
+                //console.log(data);
+                var cs = data["callsign"];
+                var pos = new WorldWind.Position(data["lat_deg"],
+                                                data["lon_deg"],
+                                                data["alt_m"]);
+                var scale = data["scale"];
+                if (cs in aircraftList) {
+                    aircraftList[cs].position = pos;
+                    aircraftList[cs].scale = scale;
+                } else {
+                    console.log('new aircraft: ' + cs);
+                    aircraftList[cs] = new Aircraft(cs, pos, scale, acLayer);
+                }
             }
-            console.log(aircraftList);
             wwd.redraw();
         });
     });
