@@ -3,6 +3,8 @@ import socket
 import time
 import math
 import json
+import threading
+import Queue
 
 def latlon(lat_deg, lon_deg, d_nmi, brg_deg):
     R_km = 6378.1 # Radius of the Earth
@@ -19,13 +21,44 @@ def latlon(lat_deg, lon_deg, d_nmi, brg_deg):
 class Aircraft(object):
     def __init__(self):
         self._api = OpenSkyApi()
-        s = self._api.get_states()
-        self._state = s.states[0]
+        self._state = None
+        self._q = Queue.Queue(maxsize=2)
+        self._poll_icao24 = None
+        self._poll_last_t = None
+        self._poll_thread = threading.Thread(target=self._poll_opensky)
+        self._poll_thread.daemon = True  # will abruptly die on main exit
+        self._poll_thread.start()
+
+    def _poll_opensky(self):
+        while True:
+            state = None
+            if self._poll_icao24 is None:
+                t0 = time.time()
+                s = self._api.get_states()
+                self._poll_last_t = time.time()
+                dt = self._poll_last_t - t0
+                print('Initial update from OpenSky after %3.1fs' % dt)
+                self._poll_icao24 = s.states[0].icao24
+                state = s.states[0]
+            else:
+                s = self._api.get_states(icao24=self._state.icao24)
+                if s is not None:
+                    t = time.time()
+                    dt = t - self._poll_last_t
+                    print('Update from OpenSky after %3.1fs' % dt)
+                    self._poll_last_t = t
+                    state = s.states[0]
+            if state is not None:
+                self._q.put(state)
+            time.sleep(1.0)
+
     def position(self):
-        s = self._api.get_states(icao24=self._state.icao24)
-        if s is not None:
-            self._state = s.states[0]
-        print(self._state)
+        while self._state is None:
+            self._state = self._q.get()
+        try:
+            self._state = self._q.get(block=False)
+        except Queue.Empty:
+            pass
         t = time.time()
         t0 = self._state.time_position
         lat0 = self._state.latitude
@@ -39,6 +72,7 @@ class Aircraft(object):
         lat_deg, lon_deg = latlon(lat0, lon0, d_nmi, hdg)
         alt_m = (alt0 + vclmb * (dt / 3600.))
         return lat_deg, lon_deg, alt_m
+
     def callsign(self):
         return self._state.callsign
 
