@@ -27,9 +27,10 @@ requirejs([], function () {
         this.colladaLoader = new WorldWind.ColladaLoader(position);
         this.colladaLoader.init({'dirPath': 'public/'});
         var self = this;
-        this.colladaLoader.load('duck.dae', function (scene) {
+        this.colladaLoader.load('old_plane/plane_DAE.dae', function (scene) {
             self.colladaScene = scene;
             self.colladaScene.scale = scale;
+            self.colladaScene.zRotation = 100.0;
             var attrs = new WorldWind.AnnotationAttributes(null);
             attrs.cornerRadius = 5;
             attrs.backgroundColor = WorldWind.Color.BLACK;
@@ -62,7 +63,8 @@ requirejs([], function () {
                 "cs   :    " + this.callsign + "\n" +
                 "lat  : " + this.colladaScene.position.latitude.toFixed(6) + "\n" +
                 "lon  : " + this.colladaScene.position.longitude.toFixed(6) + "\n" +
-                "alt  :   " + this.colladaScene.position.altitude.toFixed(2) + "\n"
+                "alt  :   " + this.colladaScene.position.altitude.toFixed(2) + "\n" +
+                "hdg  :   " + -1 * this.colladaScene.zRotation.toFixed(2)
         },
 
         get position() {
@@ -78,6 +80,16 @@ requirejs([], function () {
         get scale() {
             if (this.colladaScene == null) return null;
             else return this.colladaScene.scale;
+        },
+
+        set heading(hdg) {
+            if (this.colladaScene == null) return;
+            this.colladaScene.zRotation = -1 * hdg;
+        },
+
+        get heading() {
+            if (this.colladaScene == null) return null;
+            else return -1 * this.colladaScene.zRotation;
         }
     };
 
@@ -99,10 +111,14 @@ requirejs([], function () {
                 var pos = new WorldWind.Position(data["lat_deg"],
                                                 data["lon_deg"],
                                                 data["alt_m"]);
-                var scale = data["scale"];
+                //var scale = data["scale"];
+                var scale = 1000.0;
+                var heading = data["hdg_deg"];
+                //console.log("cs: " + cs + ", hdg: " + heading);
                 if (cs in aircraftList) {
                     aircraftList[cs].position = pos;
-                    aircraftList[cs].scale = scale;
+                    aircraftList[cs].heading = heading;
+                    //console.log(aircraftList);
                 } else {
                     console.log('new aircraft: ' + cs);
                     aircraftList[cs] = new Aircraft(cs, pos, scale, acLayer);
